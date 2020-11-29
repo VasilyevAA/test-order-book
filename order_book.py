@@ -41,10 +41,23 @@ class Order:
     def ts(self):
         return self.__timestamp
 
+    @property
+    def status(self):
+        return self.__status
+
+    def __post_init__(self):
+        if self.price < 0:
+            raise Exception(f"Try to create invalid order. Set invalid {self.price=}")
+        if self.volume < 0:
+            raise Exception(f"Try to create invalid order. Set invalid {self.volume=}")
 
 
+class OrderList(UserList):
 
-
+    def __init__(self):
+        super().__init__(self)
+        self.price = None
+        self.quantity = 0
 
 
 class OrderBook:
