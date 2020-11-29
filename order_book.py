@@ -15,8 +15,17 @@ class Order:
     volume: Decimal
     owner_id: str
     status: str
-    id: uuid.uuid4 = uuid.uuid4()
-    timestamp: int = time.time_ns()
+    __id: str = uuid.uuid4()
+    __timestamp: int = time.time_ns()
+
+    @property
+    def id(self):
+        return self.__id
+
+    @property
+    def ts(self):
+        return self.__timestamp
+
 
 
 class OrderList:
