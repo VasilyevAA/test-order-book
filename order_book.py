@@ -1,7 +1,14 @@
 import time
 import uuid
 from decimal import Decimal
+from collections import UserList, OrderedDict, defaultdict
 from dataclasses import dataclass
+
+
+class OrderedDefaultDict(OrderedDict, defaultdict):
+    def __init__(self, default_factory=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.default_factory = default_factory
 
 
 class OrderAction:
@@ -9,12 +16,20 @@ class OrderAction:
     BID = 2
 
 
+class OrderStatus:
+    INIT = "init"
+    OPEN = "open"
+    TRADE = "trade"
+    CLOSE = "close"
+
+
 @dataclass
 class Order:
     price: Decimal
     volume: Decimal
+    type: str
     owner_id: str
-    status: str
+    __status: str = 'init'
     __id: str = uuid.uuid4()
     __timestamp: int = time.time_ns()
 
@@ -28,14 +43,15 @@ class Order:
 
 
 
-class OrderList:
-    pass
+
+
 
 
 class OrderBook:
 
     def __init__(self):
-        pass
+        self.asks = OrderedDefaultDict(OrderList)
+        self.bids = OrderedDefaultDict(OrderList)
 
     @property
     def market_data(self):
@@ -49,3 +65,8 @@ class OrderBook:
 
     def get_order_by(self, order_id):
         pass
+
+
+
+if __name__ == "__main__":
+    Order(Decimal("-1"), Decimal("-2"), 'qwe', 'qwe1')
