@@ -1,3 +1,7 @@
+import time
+import uuid
+from decimal import Decimal
+from dataclasses import dataclass
 
 
 class OrderAction:
@@ -5,8 +9,14 @@ class OrderAction:
     BID = 2
 
 
+@dataclass
 class Order:
-    pass
+    price: Decimal
+    volume: Decimal
+    owner_id: str
+    status: str
+    id: uuid.uuid4 = uuid.uuid4()
+    timestamp: int = time.time_ns()
 
 
 class OrderList:
