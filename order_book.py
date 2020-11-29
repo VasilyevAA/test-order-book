@@ -24,4 +24,19 @@ class OrderList:
 
 
 class OrderBook:
-    pass
+
+    def __init__(self):
+        pass
+
+    @property
+    def market_data(self):
+        pass
+
+    def add_order(self, order: Order):
+        pass
+
+    def remove_order(self, order_id):
+        pass
+
+    def get_order_by(self, order_id):
+        pass
