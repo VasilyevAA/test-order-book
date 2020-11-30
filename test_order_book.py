@@ -1,9 +1,10 @@
 from random import choice
 
 import pytest
-from hypothesis import strategies as st
+from hypothesis import given, strategies as st
 
 from order_book import Order, OrderType, OrderBook
+
 
 DEFAULT_TRADING_PAIR = "BTC_USD"
 
@@ -15,6 +16,10 @@ def generate_order_obj(**kwargs):
     kwargs.setdefault("type", choice([OrderType.ASK, OrderType.BID]))
     kwargs.setdefault("owner_id", st.uuids().example())
     return Order(**kwargs)
+
+
+def params_by_order_type():
+    return pytest.mark.parametrize('order_type', [OrderType.ASK, OrderType.BID], ids=['ASK', 'BID'])
 
 
 class BaseOrderBookTest:
@@ -34,32 +39,43 @@ class TestAddOrderInOrderBook(BaseOrderBookTest):
     def test_negative_add_same_order_twice(self):
         pass
 
-    @pytest.mark.parametrize('invalid_map_data', [{}], ids=['different'])
-    def test_negative_add_unprocessable_order(self):
+    @params_by_order_type()
+    def test_negative_add_order_with_invalid_trading_pair_with_type(self, order_type):
+        pass
+
+    @given(order_type=st.text(max_size=5))
+    def test_negative_add_order_with_invalid_type(self):
         pass
 
 
 class TestRemoveOrderFromOrderBook(BaseOrderBookTest):
 
-    def test_positive_delete_order_with_type(self):
+    @params_by_order_type()
+    def test_positive_delete_order_with_type(self, order_type):
         pass
 
-    def test_negative_delete_exist_order_twice_with_type(self):
+    @params_by_order_type()
+    def test_negative_delete_exist_order_twice_with_type(self, order_type):
         pass
 
-    def test_negative_delete_not_exist_order_with_type(self):
+    def test_negative_delete_not_exist_order(self):
+        pass
+
+    def test_negative_delete_order_by_invalid_data(self):
         pass
 
 
 class TestGetOrderFromOrderBook(BaseOrderBookTest):
 
-    def test_positive_get_exist_order_with_type(self):
+    @params_by_order_type()
+    def test_positive_get_exist_order_with_type(self, order_type):
         pass
 
-    def test_negative_get_removed_order_with_type(self):
+    @params_by_order_type()
+    def test_negative_get_removed_order_with_type(self, order_type):
         pass
 
-    def test_negative_not_exist_order_with_type(self):
+    def test_negative_not_exist_order(self):
         pass
 
 
