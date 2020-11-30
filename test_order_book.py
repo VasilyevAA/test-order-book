@@ -1,3 +1,6 @@
+"""
+Исходя из задания, проверять непосредственно будет только класс OrderBook и его методы прописанные в рамках П.2
+"""
 from random import choice
 
 import pytest
@@ -87,8 +90,20 @@ class TestGetMarketData:
     def test_positive_market_data_with_asks_only(self):
         pass
 
+    def test_positive_market_data_with_a_lot_of_bid_prices(self):
+        pass
+
+    def test_positive_market_data_with_a_lot_of_ask_prices(self):
+        pass
+
     def test_positive_market_data_with_bids_and_asks(self):
         pass
 
+    def test_positive_remove_order_from_market_data(self):
+        pass
+
     def test_positive_market_data_without_data(self):
+        pass
+
+    def test_market_data_max_print_size_limiter(self):
         pass
