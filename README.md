@@ -5,8 +5,8 @@
 Ответьте для себя на следующие вопросы:
     1. Что такое биржевой стакан и какими свойствами он обычно обладает:
         
-        table(ask_bid[volume, price])
-        ask, bids, spread=diff(min_ask, max_bid),
+        table(ask_bid[price, volume])
+        trade_pair_name, ask, bids, spread=diff(min_ask, max_bid),
         print_size(ask_count, bid_count) = default (20, 20)
 
     2. Что такое заявка и какие ее основные параметры:

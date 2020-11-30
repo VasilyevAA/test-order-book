@@ -45,6 +45,8 @@ class Order:
     def __post_init__(self):
         if not isinstance(self.price, Decimal) or not isinstance(self.volume, Decimal):
             raise Exception("Price and Volume should be Decimal instance")
+        if self.price != self.price.quantize("1.00000000") or self.volume != self.volume.quantize("1.00000000"):
+            raise Exception("Max precisions for decimals = 8")
         if self.price <= 0:
             raise Exception(f"Try to create invalid order. Set invalid {self.price=}")
         if self.volume <= 0:
@@ -91,7 +93,7 @@ class OrderList(UserList):
             self.quantity += order.volume
             return
 
-        raise Exception
+        raise Exception(f"Invalid price or state for this order container. Curr data: {self.price=}, {self.quantity=}")
 
     def _remove_process(self, order: Order):
         if self.price == order.price \
@@ -100,13 +102,12 @@ class OrderList(UserList):
             self.quantity -= order.volume
             return
 
-        raise Exception
+        raise Exception("Order not exist in this container")
 
     def add_order(self, val):
-
         self._process_order(val)
-        self.insert(0, val)
-        # self.insert(len(self.data), val)
+        # self.insert(0, val)
+        self.insert(len(self.data), val)
 
     def del_order(self, order_id):
         if order_id in self.data:
@@ -125,24 +126,76 @@ class OrderList(UserList):
 
 class OrderBook:
 
-    def __init__(self):
-        self.asks = OrderedDefaultDict(OrderList)
-        self.bids = OrderedDefaultDict(OrderList)
+    def __init__(self, trading_pair: str, asks_count=10, bids_count=10):
+        self.asks = SortedDefaultDict(OrderList)  # TODO: should be reversed
+        self.bids = SortedDefaultDict(OrderList)
+        self.orders_meta = dict()
+        self.trading_pair = trading_pair
+        self.asks_count = asks_count
+        self.bids_count = bids_count
+
+    def __to_market_table(self, asks_or_bids, count_of_items):
+        count_of_items = count_of_items if len(asks_or_bids) > count_of_items else len(asks_or_bids)
+        data = [asks_or_bids.peekitem(i) for i in range(count_of_items)]
+        return {str(k): str(v.quantity) for k, v in data}
+
+    def _check_order_exist_and_get_meta(self, order_id):
+        if order_id in self.orders_meta:
+            return order_id, *self.orders_meta[order_id]
+        KeyError(f"Not exist entity {order_id=}")
 
     @property
     def market_data(self):
-        pass
+        #  TODO: Maybe i should use event-base implementation with mutex for good speed and support clearly snapshot,
+        #   but it so long way for implementation.
+        #   (support mutex in orderList layer(adding\remove)+ global mutex for orderBook layer)
+
+        return {
+            "asks": self.__to_market_table(self.asks, self.asks_count),
+            "bids": self.__to_market_table(self.bids, self.bids_count),
+        }
 
     def add_order(self, order: Order):
-        pass
+        if not isinstance(order, Order) and order.trading_pair == self.trading_pair:
+            raise Exception
+        if order.type == OrderType.ASK:
+            self.asks[order.price].add_order(order)
+        elif order.type == OrderType.BID:
+            self.bids[order.price].add_order(order)
+        else:
+            raise Exception(f"Not supported {order.type=}")
+        self.orders_meta[order.id] = (order.price, order.type)
+
+    def __find_order_list_with_specific_order(self, order_id) -> OrderList:
+        id_, price, type_ = self._check_order_exist_and_get_meta(order_id)
+        return self.asks[price] if type_ == OrderType.ASK else self.bids[price]
 
     def remove_order(self, order_id):
-        pass
+        order_list = self.__find_order_list_with_specific_order(order_id)
+        order_list.del_order(order_id)
 
     def get_order_by(self, order_id):
-        pass
-
+        order_list = self.__find_order_list_with_specific_order(order_id)
+        return [i for i in order_list if order_id == i][0]
 
 
 if __name__ == "__main__":
-    Order(Decimal("-1"), Decimal("-2"), 'qwe', 'qwe1')
+    from random import randint, choice
+
+    qwe = SortedDefaultDict(list)
+    qwe[4].append(1)
+    qwe[2].append(2)
+    qwe[3].append(2)
+    qwe[1].append(2)
+    qwe[5].append(2)
+    print(qwe)
+
+    order_book = OrderBook('BTC_USD')
+    ord = Order('BTC_USD', Decimal("2"), Decimal("22"), OrderType.ASK, 'qwe1')
+    ord_2 = Order('BTC_USD', Decimal("2"), Decimal("22"), OrderType.BID, 'qwe1')
+
+    order_book.add_order(ord)
+    for i in range(30):
+        ord = Order('BTC_USD', Decimal(str(randint(1, 5))), Decimal(str(randint(1, 20))), choice([OrderType.BID, OrderType.ASK]), 'qwe1')
+        order_book.add_order(ord)
+    print(order_book.market_data)
