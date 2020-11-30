@@ -1,10 +1,10 @@
 import time
 import uuid
 from decimal import Decimal
+from collections import UserList
 from dataclasses import dataclass, field
-from functools import total_ordering
+
 from sortedcontainers import SortedDict
-from collections import UserList, OrderedDict
 
 
 class SortedDefaultDict(SortedDict):
@@ -18,8 +18,8 @@ class SortedDefaultDict(SortedDict):
 
 
 class OrderType:
-    ASK = 1
-    BID = 2
+    ASK = "ask"
+    BID = "bid"
 
 
 class OrderStatus:
@@ -32,11 +32,11 @@ class OrderStatus:
 # @total_ordering
 @dataclass
 class Order:
+    trading_pair: str
     price: Decimal
     volume: Decimal
     type: str
     owner_id: str
-    trading_pair: str
     __status: str = OrderStatus.INIT
     __curr_volume: Decimal = None
     __id: str = field(default_factory=lambda: str(uuid.uuid4()))
@@ -77,7 +77,7 @@ class Order:
 
 class OrderList(UserList):
     # self.data -> list .... TODO: change to another more faster class.
-    #  Need push and pop with O(1) and slow insert sorted by timestamp
+    #  Need push and pop with O(1) and slow insertion by ordered timestamp like queue
 
     def __init__(self):
         super().__init__(self)
@@ -85,18 +85,35 @@ class OrderList(UserList):
         self.quantity = 0
 
     def _process_order(self, order: Order):
-        if not isinstance(order, Order):
-            raise Exception
         if self.price is None and self.quantity == 0:
             self.price = order.price
-        self.quantity += order.volume
+        if self.price == order.price:
+            self.quantity += order.volume
+            return
 
-    def append(self, val):
+        raise Exception
+
+    def _remove_process(self, order: Order):
+        if self.price == order.price \
+                and self.quantity > 0 \
+                and self.quantity > order.volume:
+            self.quantity -= order.volume
+            return
+
+        raise Exception
+
+    def add_order(self, val):
+
         self._process_order(val)
-        self.insert(len(self.data), val)
+        self.insert(0, val)
+        # self.insert(len(self.data), val)
 
     def del_order(self, order_id):
         if order_id in self.data:
+            idx = self.data.index(order_id)
+            order = self.data[idx]
+            self._remove_process(order)
+            del self.data[idx]
             return
 
         raise Exception("Order not exist in this orderList")
@@ -104,8 +121,6 @@ class OrderList(UserList):
     # def __delitem__(self, ii):
     #     """Delete an item"""
     #     del self._list[ii]
-
-
 
 
 class OrderBook:
