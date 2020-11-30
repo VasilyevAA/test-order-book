@@ -30,29 +30,26 @@ class OrderStatus:
 
 
 # Simplest way, Its use some model from Django\FastApi with validating method =)
-@dataclass
+@dataclass(frozen=True)
 class Order:
     trading_pair: str
     price: Decimal
     volume: Decimal
     type: str
     owner_id: str
-    __status: str = OrderStatus.INIT
-    __curr_volume: Decimal = None
-    __id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    __timestamp: int = field(default_factory=time.time_ns)
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    ts: int = field(default_factory=time.time_ns)
 
     def __post_init__(self):
         if not isinstance(self.price, Decimal) or not isinstance(self.volume, Decimal):
             raise Exception("Price and Volume should be Decimal instance")
-        if self.price != self.price.quantize("1.00000000") or self.volume != self.volume.quantize("1.00000000"):
+        quntil = Decimal("1.00000000")
+        if self.price != self.price.quantize(quntil) or self.volume != self.volume.quantize(quntil):
             raise Exception("Max precisions for decimals = 8")
         if self.price <= 0:
             raise Exception(f"Try to create invalid order. Set invalid {self.price=}")
         if self.volume <= 0:
             raise Exception(f"Try to create invalid order. Set invalid {self.volume=}")
-
-        self.__curr_volume = self.volume
 
     def __eq__(self, other):
         if isinstance(other, str):
@@ -60,18 +57,6 @@ class Order:
         if isinstance(other, self.__class__):
             return self.id == other.id
         return False
-
-    @property
-    def id(self):
-        return self.__id
-
-    @property
-    def ts(self):
-        return self.__timestamp
-
-    @property
-    def status(self):
-        return self.__status
 
     def early_than(self, order: "Order"):
         return self.ts < order.ts
@@ -158,6 +143,8 @@ class OrderBook:
     def add_order(self, order: Order):
         if not isinstance(order, Order) and order.trading_pair == self.trading_pair:
             raise Exception
+        if order.id in self.orders_meta:
+            raise Exception("Order exist in this OrderBook")
         if order.type == OrderType.ASK:
             self.asks[order.price].add_order(order)
         elif order.type == OrderType.BID:
