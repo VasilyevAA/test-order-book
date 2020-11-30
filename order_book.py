@@ -29,7 +29,7 @@ class OrderStatus:
     CLOSE = "close"
 
 
-# @total_ordering
+# Simplest way, Its use some model from Django\FastApi with validating method =)
 @dataclass
 class Order:
     trading_pair: str
