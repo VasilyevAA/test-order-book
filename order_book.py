@@ -141,7 +141,7 @@ class OrderBook:
 
     def _check_order_exist_and_get_meta(self, order_id):
         if order_id in self.orders_meta:
-            return order_id, *self.orders_meta[order_id]
+            return None
         KeyError(f"Not exist entity {order_id=}")
 
     @property
@@ -166,21 +166,26 @@ class OrderBook:
             raise Exception(f"Not supported {order.type=}")
         self.orders_meta[order.id] = (order.price, order.type)
 
-    def __find_order_list_with_specific_order(self, order_id) -> OrderList:
-        id_, price, type_ = self._check_order_exist_and_get_meta(order_id)
+    def __find_order_list_with_specific_order(self, order_id, remove_from_list) -> OrderList:
+        self._check_order_exist_and_get_meta(order_id)
+        if remove_from_list:
+            price, type_ = self.orders_meta.pop(order_id)
+        else:
+            price, type_ = self.orders_meta[order_id]
         return self.asks[price] if type_ == OrderType.ASK else self.bids[price]
 
     def remove_order(self, order_id):
-        order_list = self.__find_order_list_with_specific_order(order_id)
+        order_list = self.__find_order_list_with_specific_order(order_id, remove_from_list=True)
         order_list.del_order(order_id)
 
     def get_order_by(self, order_id):
-        order_list = self.__find_order_list_with_specific_order(order_id)
+        order_list = self.__find_order_list_with_specific_order(order_id, remove_from_list=False)
         return [i for i in order_list if order_id == i][0]
 
 
 if __name__ == "__main__":
     from random import randint, choice
+    from hypothesis import given, strategies as st
 
     qwe = SortedDefaultDict(list)
     qwe[4].append(1)
