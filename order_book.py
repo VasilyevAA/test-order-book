@@ -70,10 +70,13 @@ class OrderList(UserList):
         super().__init__(self)
         self.price = None
         self.quantity = 0
+        self.order_type_meta = None
 
     def _process_order(self, order: Order):
-        if self.price is None and self.quantity == 0:
+        if self.price is None and self.order_type_meta is None and self.quantity == 0:
             self.price = order.price
+            self.order_type_meta = order.type
+
         if self.price == order.price:
             self.quantity += order.volume
             return
@@ -121,8 +124,11 @@ class OrderBook:
 
     def __to_market_table(self, asks_or_bids, count_of_items):
         count_of_items = count_of_items if len(asks_or_bids) > count_of_items else len(asks_or_bids)
-        data = [asks_or_bids.peekitem(i) for i in range(count_of_items)]
-        return {str(k): str(v.quantity) for k, v in data if v.quantity > 0}
+        result = []
+        for i in range(count_of_items):
+            price, order_list = asks_or_bids.peekitem(i)
+            result.append({"price": str(price), "quantity": str(order_list.quantity)})
+        return result
 
     def _check_order_exist_and_get_meta(self, order_id):
         if order_id in self.orders_meta:
@@ -167,6 +173,11 @@ class OrderBook:
     def remove_order(self, order_id):
         order_list = self.__find_order_list_with_specific_order(order_id, remove_from_list=True)
         order_list.del_order(order_id)
+        if order_list.quantity == 0:
+            if order_list.order_type_meta == OrderType.ASK:
+                del self.asks[order_list.price]
+            else:
+                del self.bids[order_list.price]
 
     def get_order_by(self, order_id):
         order_list = self.__find_order_list_with_specific_order(order_id, remove_from_list=False)
