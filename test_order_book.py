@@ -1,10 +1,10 @@
 """
-Исходя из задания, проверять непосредственно будет только класс OrderBook и его методы прописанные в рамках П.2
+Исходя из задания, проверяться непосредственно будет только класс OrderBook и его методы прописанные в рамках П.2
 """
 import uuid
 from decimal import Decimal
-from random import choice, randint, uniform
 from collections import defaultdict
+from random import choice, randint, uniform
 
 import pytest
 from hypothesis import given, strategies as st
