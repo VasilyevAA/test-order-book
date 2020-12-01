@@ -83,9 +83,9 @@ class OrderList(UserList):
     def _remove_process(self, order: Order):
         if self.price == order.price \
                 and self.quantity > 0 \
-                and self.quantity > order.volume:
+                and self.quantity >= order.volume:
             self.quantity -= order.volume
-            return
+            return None
 
         raise Exception("Order not exist in this container")
 
@@ -100,7 +100,7 @@ class OrderList(UserList):
             order = self.data[idx]
             self._remove_process(order)
             del self.data[idx]
-            return
+            return None
 
         raise Exception("Order not exist in this orderList")
 
@@ -122,12 +122,12 @@ class OrderBook:
     def __to_market_table(self, asks_or_bids, count_of_items):
         count_of_items = count_of_items if len(asks_or_bids) > count_of_items else len(asks_or_bids)
         data = [asks_or_bids.peekitem(i) for i in range(count_of_items)]
-        return {str(k): str(v.quantity) for k, v in data}
+        return {str(k): str(v.quantity) for k, v in data if v.quantity > 0}
 
     def _check_order_exist_and_get_meta(self, order_id):
         if order_id in self.orders_meta:
             return None
-        KeyError(f"Not exist entity {order_id=}")
+        raise KeyError(f"Not exist {order_id=}")
 
     @property
     def market_data(self):

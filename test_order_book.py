@@ -89,17 +89,36 @@ class TestRemoveOrderFromOrderBook(BaseOrderBookTest):
 
     @params_by_order_type()
     def test_positive_delete_order_with_type(self, order_type):
-        pass
+        ord = generate_order_obj(type=order_type)
+        self.order_book.add_order(ord)
+        self.order_book.remove_order(ord.id)
+        assert not self.get_orders_from_bids()
+        assert not self.get_orders_from_asks()
 
     @params_by_order_type()
     def test_negative_delete_exist_order_twice_with_type(self, order_type):
-        pass
+        ord = generate_order_obj(type=order_type)
+        self.order_book.add_order(ord)
+        self.order_book.remove_order(ord.id)
+        with pytest.raises(Exception) as e:
+            self.order_book.remove_order(ord.id)
+        assert "Not exist order_id=" in str(e.value)
+        assert not self.get_orders_from_bids()
+        assert not self.get_orders_from_asks()
 
     def test_negative_delete_not_exist_order(self):
-        pass
+        ord = generate_order_obj()
+        with pytest.raises(Exception) as e:
+            self.order_book.remove_order(ord.id)
+        assert "Not exist order_id=" in str(e.value)
+        assert not self.get_orders_from_bids()
+        assert not self.get_orders_from_asks()
 
-    def test_negative_delete_order_by_invalid_data(self):
-        pass
+    @given(invalid_id=st.text(max_size=5))
+    def test_negative_delete_order_by_invalid_data(self, invalid_id):
+        with pytest.raises(Exception) as e:
+            self.order_book.remove_order(invalid_id)
+        assert "Not exist order_id=" in str(e.value)
 
 
 class TestGetOrderFromOrderBook(BaseOrderBookTest):
