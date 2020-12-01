@@ -123,19 +123,37 @@ class TestRemoveOrderFromOrderBook(BaseOrderBookTest):
 
 class TestGetOrderFromOrderBook(BaseOrderBookTest):
 
-    @params_by_order_type()
-    def test_positive_get_exist_order_with_type(self, order_type):
-        pass
+    def test_positive_get_exist_bid_order(self):
+        ord = generate_order_obj(type=OrderType.BID)
+        self.order_book.add_order(ord)
+        actual_order = self.order_book.get_order_by(ord.id)
+        assert actual_order is ord
+
+    def test_positive_get_exist_ask_order(self):
+        ord = generate_order_obj(type=OrderType.ASK)
+        self.order_book.add_order(ord)
+        actual_order = self.order_book.get_order_by(ord.id)
+        assert actual_order is ord
 
     @params_by_order_type()
     def test_negative_get_removed_order_with_type(self, order_type):
-        pass
+        ord = generate_order_obj(type=order_type)
+        self.order_book.add_order(ord)
+        self.order_book.remove_order(ord.id)
+        with pytest.raises(Exception) as e:
+            self.order_book.get_order_by(ord.id)
+        assert "Not exist order_id=" in str(e.value)
+        assert not self.get_orders_from_bids()
+        assert not self.get_orders_from_asks()
 
     def test_negative_not_exist_order(self):
-        pass
+        ord = generate_order_obj()
+        with pytest.raises(Exception) as e:
+            self.order_book.get_order_by(ord.id)
+        assert "Not exist order_id=" in str(e.value)
 
 
-class TestGetMarketData:
+class TestGetMarketDataFromOrderBook(BaseOrderBookTest):
 
     def test_positive_market_data_with_bids_only(self):
         pass
