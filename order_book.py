@@ -142,9 +142,12 @@ class OrderBook:
 
     def add_order(self, order: Order):
         if not isinstance(order, Order) and order.trading_pair == self.trading_pair:
-            raise Exception
+            raise Exception("Try to add not Order instance")
         if order.id in self.orders_meta:
             raise Exception("Order exist in this OrderBook")
+        if order.trading_pair != self.trading_pair:
+            raise Exception(f"Try to add order with not supported trading pair. Supported {self.trading_pair=}")
+
         if order.type == OrderType.ASK:
             self.asks[order.price].add_order(order)
         elif order.type == OrderType.BID:

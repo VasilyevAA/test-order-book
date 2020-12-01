@@ -30,25 +30,59 @@ class BaseOrderBookTest:
     def setup(self):
         self.order_book = OrderBook(DEFAULT_TRADING_PAIR)
 
+    def __get_orders_from(self, bids_or_asks):
+        all_orders = []
+        for order_list in bids_or_asks.values():
+            all_orders.extend(order_list)
+        return all_orders
+
+    def get_orders_from_bids(self):
+        return self.__get_orders_from(self.order_book.bids)
+
+    def get_orders_from_asks(self):
+        return self.__get_orders_from(self.order_book.asks)
+
 
 class TestAddOrderInOrderBook(BaseOrderBookTest):
 
     def test_positive_add_bid_order(self):
-        pass
+        ord = generate_order_obj(type=OrderType.BID)
+        self.order_book.add_order(ord)
+        assert self.order_book.bids
+        assert not self.order_book.asks
+        assert len(self.get_orders_from_bids()) == 1
 
     def test_positive_add_asc_order(self):
-        pass
+        ord = generate_order_obj(type=OrderType.ASK)
+        self.order_book.add_order(ord)
+        assert self.order_book.asks
+        assert not self.order_book.bids
+        assert len(self.get_orders_from_asks()) == 1
 
     def test_negative_add_same_order_twice(self):
-        pass
+        ord = generate_order_obj(type=OrderType.BID)
+        self.order_book.add_order(ord)
+        with pytest.raises(Exception) as e:
+            self.order_book.add_order(ord)
+        assert "Order exist in" in str(e.value)
+        assert len(self.get_orders_from_bids()) == 1
 
     @params_by_order_type()
     def test_negative_add_order_with_invalid_trading_pair_with_type(self, order_type):
-        pass
+        ord = generate_order_obj(type=order_type, trading_pair=st.text(min_size=1, max_size=5).example())
+        with pytest.raises(Exception) as e:
+            self.order_book.add_order(ord)
+        assert "not supported trading pair" in str(e.value)
+        assert not self.order_book.asks
+        assert not self.order_book.bids
 
-    @given(order_type=st.text(max_size=5))
     def test_negative_add_order_with_invalid_type(self):
-        pass
+        ord = generate_order_obj(type=st.text(max_size=5).example())
+        with pytest.raises(Exception) as e:
+            self.order_book.add_order(ord)
+        assert "Not supported order.type" in str(e.value)
+        assert not self.order_book.asks
+        assert not self.order_book.bids
 
 
 class TestRemoveOrderFromOrderBook(BaseOrderBookTest):
