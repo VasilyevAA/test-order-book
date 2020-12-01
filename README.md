@@ -40,3 +40,9 @@
     1. Скрипт должен содержать набор функций, проверяющих корректность работы класса, 
     на соответствие заданию и логике заложенной Вами.
     2. Результаты тестирования должны выводиться в консоль в читабельном формате.
+
+## How to start tests
+0) Install python 3.8
+1) Setup venv
+2) In cmd with this project -> pip install -r requirements.txt
+3) in cmd with this project -> pytest -v -s
