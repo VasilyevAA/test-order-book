@@ -66,6 +66,12 @@ class OrderList(UserList):
     # self.data -> list .... TODO: change to another more faster class.
     #  Need push and pop with O(1) and slow insertion by ordered timestamp like queue
 
+    """OrderList support simple order processing for orders with same prices
+
+    Note:
+        When process first order -> set price for this container and order_type_meta -> any[OrderAction]
+    """
+
     def __init__(self):
         super().__init__(self)
         self.price = None
@@ -94,7 +100,6 @@ class OrderList(UserList):
 
     def add_order(self, val):
         self._process_order(val)
-        # self.insert(0, val)
         self.insert(len(self.data), val)
 
     def del_order(self, order_id):
@@ -107,12 +112,18 @@ class OrderList(UserList):
 
         raise Exception("Order not exist in this orderList")
 
-    # def __delitem__(self, ii):
-    #     """Delete an item"""
-    #     del self._list[ii]
-
 
 class OrderBook:
+    """Simple OrderBook
+
+    Note:
+        OrderBook instance can processed orders only with same trading_pair
+
+    Args:
+        trading_pair (str): name for trading pair. Like "BTC_USD"
+        asks_count (int, optional): Total count of asks for visualize in market_data
+        bids_count (int, optional): Total count of bids for visualize in market_data
+    """
 
     def __init__(self, trading_pair: str, asks_count=10, bids_count=10):
         self.asks = SortedDefaultDict(OrderList)  # TODO: should be reversed
@@ -137,6 +148,17 @@ class OrderBook:
 
     @property
     def market_data(self):
+        """
+        Return sorted "asks" and "bids" in dict
+        :return: {
+            "asks": [
+                {
+                    "price": <value>, "quantity": <value>
+                },
+            ...],
+            "bids": [...]
+        }
+        """
         #  TODO: Maybe i should use event-base implementation with mutex for good speed and support clearly snapshot,
         #   but it so long way for implementation.
         #   (support mutex in orderList layer(adding\remove)+ global mutex for orderBook layer)
@@ -147,6 +169,13 @@ class OrderBook:
         }
 
     def add_order(self, order: Order):
+        """
+        Add order with pre-validating. If this instance doesn't have bids or asks (one of and depends of order type)
+        then init new container for orders with same price for clearly manage total quantity and order processing
+
+        :param order:
+        :return:
+        """
         if not isinstance(order, Order) and order.trading_pair == self.trading_pair:
             raise Exception("Try to add not Order instance")
         if order.id in self.orders_meta:
@@ -171,6 +200,12 @@ class OrderBook:
         return self.asks[price] if type_ == OrderType.ASK else self.bids[price]
 
     def remove_order(self, order_id):
+        """
+        Remove order from container and remove container instance if order was last(container.quantity => 0)
+
+        :param order_id:
+        :return:
+        """
         order_list = self.__find_order_list_with_specific_order(order_id, remove_from_list=True)
         order_list.del_order(order_id)
         if order_list.quantity == 0:
@@ -179,7 +214,12 @@ class OrderBook:
             else:
                 del self.bids[order_list.price]
 
-    def get_order_by(self, order_id):
+    def get_order_by(self, order_id) -> Order:
+        """Get order from orderBook instance
+
+        :param order_id: str(uuid4) like "a8e081bc-a086-4316-bedc-e406d72eb752"
+        :return:
+        """
         order_list = self.__find_order_list_with_specific_order(order_id, remove_from_list=False)
         return [i for i in order_list if order_id == i][0]
 
